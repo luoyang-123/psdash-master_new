@@ -38,12 +38,7 @@ class RemoteNode(Node):
         self.port = int(port)
         self.last_registered = None
 
-    def _create_service(self):
-        logger.info('Connecting to node %s', self.get_id())
-        c = zerorpc.Client()
-        c.connect('tcp://%s:%s' % (self.host, self.port))
-        logger.info('Connected.')
-        return c
+
 
     def get_id(self):
         return '%s:%s' % (self.host, self.port)
@@ -230,26 +225,7 @@ class LocalService(object):
             'cpu_affinity': p.cpu_affinity()
         }
 
-    def get_process_limits(self, pid):
-        p = psutil.Process(pid)
-        return {
-            'RLIMIT_AS': p.rlimit(psutil.RLIMIT_AS),
-            'RLIMIT_CORE': p.rlimit(psutil.RLIMIT_CORE),
-            'RLIMIT_CPU': p.rlimit(psutil.RLIMIT_CPU),
-            'RLIMIT_DATA': p.rlimit(psutil.RLIMIT_DATA),
-            'RLIMIT_FSIZE': p.rlimit(psutil.RLIMIT_FSIZE),
-            'RLIMIT_LOCKS': p.rlimit(psutil.RLIMIT_LOCKS),
-            'RLIMIT_MEMLOCK': p.rlimit(psutil.RLIMIT_MEMLOCK),
-            'RLIMIT_MSGQUEUE': p.rlimit(psutil.RLIMIT_MSGQUEUE),
-            'RLIMIT_NICE': p.rlimit(psutil.RLIMIT_NICE),
-            'RLIMIT_NOFILE': p.rlimit(psutil.RLIMIT_NOFILE),
-            'RLIMIT_NPROC': p.rlimit(psutil.RLIMIT_NPROC),
-            'RLIMIT_RSS': p.rlimit(psutil.RLIMIT_RSS),
-            'RLIMIT_RTPRIO': p.rlimit(psutil.RLIMIT_RTPRIO),
-            'RLIMIT_RTTIME': p.rlimit(psutil.RLIMIT_RTTIME),
-            'RLIMIT_SIGPENDING': p.rlimit(psutil.RLIMIT_SIGPENDING),
-            'RLIMIT_STACK': p.rlimit(psutil.RLIMIT_STACK)
-        }
+
 
     def get_process_environment(self, pid):
         with open('/proc/%d/environ' % pid) as f:
@@ -350,20 +326,4 @@ class LocalService(object):
 
         return available_logs
 
-    def read_log(self, filename, session_key=None, seek_tail=False):
-        log = self.node.logs.get(filename, key=session_key)
-        if seek_tail:
-            log.set_tail_position()
-        return log.read()
 
-    def search_log(self, filename, text, session_key=None):
-        log = self.node.logs.get(filename, key=session_key)
-        pos, bufferpos, res = log.search(text)
-        stat = os.stat(log.filename)
-        data = {
-            'position': pos,
-            'buffer_pos': bufferpos,
-            'filesize': stat.st_size,
-            'content': res
-        }
-        return data
